@@ -1,4 +1,3 @@
-"use strict";
 var since = 0;
 var mousepos = [0,0]
 const canvas = document.querySelector("#canvas");
@@ -26,55 +25,55 @@ function main() {
   `;
   fs = `
     precision highp float;
-#define MARCHINGITERATIONS 64 
-#define MARCHINGSTEP 0.5
-#define SMALLESTSTEP 0.1
-#define DISTANCE 3.0
-#define MAXMANDELBROTDIST 1.5
-#define MANDELBROTSTEPS 64
+#define march_iter 64 
+#define m_step 0.5
+#define z_near 0.1
+#define z_far 3.0
+#define z_max 1.5
+#define mandlebrot_iters 64
 uniform vec3      iResolution;           
 uniform float     iTime;                 
 uniform vec4      iMouse;                
-vec3 cosineColor( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
+vec3 colorMap( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
 {
     return a + b*cos( 6.28318*(c*t+(b*d/a)) );
 }
-vec3 palette (float t) {
-    return cosineColor( t, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(0.01,0.01,0.01),vec3(0.00, 0.15, 0.20) );
+vec3 colorPallete (float t) {
+    return colorMap( t, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(0.01,0.01,0.01),vec3(0.00, 0.15, 0.20) );
 }
 vec2 DE(vec3 pos) {
-  float Power = 3.0+4.0*(sin(iTime/30.0)+1.0);
+  float pwr = 3.0+4.0*(sin(iTime/30.0)+1.0);
 	vec3 z = pos;
 	float dr = 1.0;
 	float r = 0.0;
-	for (int i = 0; i < MANDELBROTSTEPS ; i++) {
+	for (int i = 0; i < mandlebrot_iters ; i++) {
 		r = length(z);
-		if (r>MAXMANDELBROTDIST) break;
+		if (r>z_max) break;
 		float theta = acos(z.z/r);
 		float phi = atan(z.y,z.x);
-		dr =  pow( r, Power-1.0)*Power*dr + 1.0;
-		float zr = pow( r,Power);
-		theta = theta*Power;
-		phi = phi*Power;
+		dr =  pow( r, pwr-1.0)*pwr*dr + 1.0;
+		float zr = pow( r,pwr);
+		theta = theta*pwr;
+		phi = phi*pwr;
 		z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
 		z+=pos;
 	}
-	return vec2(0.5*log(r)*r/dr,50.0*pow(dr,0.128/float(MARCHINGITERATIONS)));
+	return vec2(0.5*log(r)*r/dr,50.0*pow(dr,0.128/float(march_iter)));
 }
 vec2 map( in vec3 p )
 {
    	vec2 d = DE(p);
    	return d;
 }
-vec2 trace  (vec3 origin, vec3 ray) {
+vec2 tr  (vec3 origin, vec3 ray) {
     float t =0.0;
     float c = 0.0;
-    for (int i=0; i<MARCHINGITERATIONS; i++) {
+    for (int i=0; i<march_iter; i++) {
     	vec3 path = origin + ray * t;	
     	vec2 dist = map(path);
-        t += MARCHINGSTEP * dist.x;
+        t += m_step * dist.x;
         c += dist.y;
-        if (dist.y < SMALLESTSTEP) break;
+        if (dist.y < z_near) break;
     }
     return vec2(t,c);
 }
@@ -87,13 +86,13 @@ void main()
     vec3 ray = normalize(vec3 (uv,1.0));
     float rotAngle = 0.4+iTime/40.0 + 6.28*iMouse.x / iResolution.x;
     ray.xz *= mat2(cos(rotAngle), -sin(rotAngle), sin(rotAngle), cos(rotAngle));
-    float camDist = DISTANCE * iMouse.y / iResolution.y;
-    if (iMouse.xy==vec2(0)) camDist = DISTANCE*0.55;
+    float camDist = z_far * iMouse.y / iResolution.y;
+    if (iMouse.xy==vec2(0)) camDist = z_far*0.55;
     vec3 origin = vec3 (camDist * sin(rotAngle),0.0,-camDist *cos(rotAngle));           
-	vec2 depth = trace(origin,ray);
+	vec2 depth = tr(origin,ray);
 	float fog = 1.0 / (1.0 + depth.x * depth.x * 0.1);
     vec3 fc = vec3(fog);
-    gl_FragColor = vec4(palette(depth.y)*fog,1.0);
+    gl_FragColor = vec4(colorPallete(depth.y)*fog,1.0);
 }
   `
   const program = webglUtils.createProgramFromSources(gl, [vs, fs]);
