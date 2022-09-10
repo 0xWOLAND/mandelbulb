@@ -140,8 +140,8 @@ void main()
   window.requestAnimationFrame(render);
 }
 main();
-canvas.addEventListener('mousedown', (e) => {
-  mousepos = [e.clientX, e.clientY];
+canvas.addEventListener('mousemove', (e) => {
+  mousepos = [e.clientX, Math.max(300, e.clientY)];
 });
 function initializeGUI() {
   var g = new dat.GUI({ name: "Controls" });
