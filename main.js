@@ -36,7 +36,7 @@ uniform float     iTime;
 uniform vec4      iMouse;                
 vec3 colorMap( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d )
 {
-    return a + b*cos( 6.28318*(c*t+(b*d/a)) );
+    return a + b*cos( 6.28318*(c*t+d) );
 }
 vec3 colorPallete (float t) {
     return colorMap( t, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(0.01,0.01,0.01),vec3(0.00, 0.15, 0.20) );
@@ -49,13 +49,16 @@ vec2 DE(vec3 pos) {
 	for (int i = 0; i < mandlebrot_iters ; i++) {
 		r = length(z);
 		if (r>z_max) break;
-		float theta = acos(z.z/r);
-		float phi = atan(z.y,z.x);
+		// float theta = acos(z.z/r);
+		// float phi = atan(z.y,z.x);
+    float theta = 2. * atan(z.y/z.x) * atan(z.y/z.x);
+    float phi = 2. * asin(z.z/r);
 		dr =  pow( r, pwr-1.0)*pwr*dr + 1.0;
 		float zr = pow( r,pwr);
 		theta = theta*pwr;
 		phi = phi*pwr;
-		z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
+		// z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
+		z = zr*vec3(cos(theta)*cos(phi), cos(phi)*sin(theta), -sin(phi));
 		z+=pos;
 	}
 	return vec2(0.5*log(r)*r/dr,50.0*pow(dr,0.128/float(march_iter)));
